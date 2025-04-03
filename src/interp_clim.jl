@@ -30,28 +30,6 @@ function interp_clim(domain,clim_filename,dataset,timerange;
         latitude = wider(y),
     )
 
-    #
-    vars = [
-        :sea_surface_height_above_geoid,
-        :sea_water_potential_temperature,
-        :sea_water_salinity,
-        :eastward_sea_water_velocity,
-        :northward_sea_water_velocity
-    ]
-
-    for var in vars
-        files, _ = download(dataset[var]; query...)
-        for (i, f) in enumerate(files)
-            base = basename(f)
-            ext = splitext(base)[2]
-            newname = joinpath(dirname(f), "$(String(var))_$(i)$(ext)")
-            if !isfile(newname)
-                mv(f, newname; force=true)
-            end
-        end
-    end
-    #
-
     zeta,(zx,zy,zt) = load(dataset[:sea_surface_height_above_geoid]; query...)
     temp,(tx,ty,tz,tt) = load(dataset[:sea_water_potential_temperature]; query...)
     salt,(sx,sy,sz,st) = load(dataset[:sea_water_salinity]; query...)
