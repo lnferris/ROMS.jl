@@ -39,40 +39,38 @@ Arguments:
   - `time_shift`: an integer time shift (in seconds) for the dataset.
 """
 function CMEMS_zarr(product_id, mapping, cachedir;
-                    chunks = 60,
-                    time_shift = 0,
-                    source = :local,
-                    kwargs...)
-    files = DefaultDict{Symbol, String, String}("unknown")
-    for (k, v) in mapping
-        dataset_id = (length(v) > 1 && v isa Tuple) ? v[end] : v
-        if source == :local
-            # Build a local file path (e.g. "so.nc") from cachedir
-            files[k] = joinpath(cachedir, string(dataset_id, ".nc"))
-        elseif source == :remote
-            # Resolve the remote URL
-            files[k] = copernicus_marine_resolve(product_id, dataset_id; kwargs...)
-        else
-            error("Unknown source option: $source. Valid options are :local or :remote.")
-        end
-    end
+    chunks = 60,
+    time_shift = 0,
+    source = :local,
+    kwargs...)
+files = DefaultDict{Symbol, String, String}("unknown")
+for (k, v) in mapping
+dataset_id = (length(v) > 1 && v isa Tuple) ? v[end] : v
+if source == :local
+files[k] = joinpath(cachedir, string(dataset_id, ".nc"))
+elseif source == :remote
+files[k] = copernicus_marine_resolve(product_id, dataset_id; kwargs...)
+else
+error("Unknown source option: $source. Valid options are :local or :remote.")
+end
+end
 
-    # Choose the dataset type based on source
-    if source == :local
-        dataset_constructor = NCDataset
-    elseif source == :remote
-        dataset_constructor = ZarrDataset
-    else
-        error("Unknown source option: $source. Valid options are :local or :remote.")
-    end
+if source == :local
+dataset = CDMDataset(
+NCDataset,
+files,
+cachedir = cachedir,
+time_shift = time_shift,
+chunks = chunks)
+else  # source == :remote
+dataset = CDMDataset(
+ZarrDataset,
+files,
+cachedir = cachedir,
+options = Dict(:_omitcode => [404, 403]),
+time_shift = time_shift,
+chunks = chunks)
+end
 
-    dataset = CDMDataset(
-        dataset_constructor,
-        files,
-        cachedir = cachedir,
-        options = Dict(:_omitcode => [404, 403]),
-        time_shift = time_shift,
-        chunks = chunks)
-
-    return dataset
+return dataset
 end
