@@ -47,6 +47,14 @@ function generate_grid(grid_fname,bath_name,xr,yr,red,opt,hmin,rmax;
 
     x,y = DIVAnd.ndgrid(x,y);
 
+    # --- Shift grid so that the bottom left point is exactly at xr[1], yr[1] ---
+    offset_x = xr[1] - x[1,1]
+    offset_y = yr[1] - y[1,1]
+    x .= x .+ offset_x
+    y .= y .+ offset_y
+    # -------------------------------------------------------------------------
+    
+
     dxs = pi * earthradius * dx * cos.(y*pi/180) / 180;
     dys = pi * earthradius * dy / 180;
 
